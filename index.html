@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Master Selection Board</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#0e1016; --s1:#16181f; --s2:#1c1f28; --s3:#22252f;
+      --b:#272a34; --bl:#333744;
+      --t:#ecedf2; --ts:rgba(236,237,242,.6); --tm:rgba(236,237,242,.32);
+      --l1:#7c6fff; --l1b:rgba(124,111,255,.14); --l1bb:rgba(124,111,255,.35);
+      --l2:#38bdf8; --l2b:rgba(56,189,248,.12); --l2bb:rgba(56,189,248,.35);
+      --l3:#f472b6; --l3b:rgba(244,114,182,.12); --l3bb:rgba(244,114,182,.35);
+      --l4:#34d399; --l4b:rgba(52,211,153,.12); --l4bb:rgba(52,211,153,.35);
+    }
+    html{scroll-behavior:smooth}
+    body{font-family:'Noto Sans KR','Inter',sans-serif;background:var(--bg);color:var(--t);min-height:100vh;overflow-x:hidden;font-size:14px;line-height:1.6}
+
+    .scroll-bar{position:fixed;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--l1),var(--l3));z-index:300;transition:width .1s linear}
+
+    /* ── NAV ── */
+    .nav{position:sticky;top:0;z-index:200;background:rgba(14,16,22,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--b);height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 32px}
+    .nav-logo{font-family:'Inter',sans-serif;font-size:13px;font-weight:800;letter-spacing:.04em;background:linear-gradient(90deg,var(--l1),var(--l3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .nav-links{display:flex;gap:4px}
+    .nav-link{font-size:11px;font-weight:600;padding:5px 11px;border-radius:6px;color:var(--ts);text-decoration:none;transition:all .15s;position:relative}
+    .nav-link:hover{color:var(--t);background:var(--s2)}
+    .nav-link.active{color:var(--t);background:var(--s2)}
+    .nav-link .nl-dot{width:5px;height:5px;border-radius:50%;position:absolute;top:4px;right:4px;display:none}
+    .nav-link.has-sel .nl-dot{display:block}
+    .nav-link[href="#level1"] .nl-dot{background:var(--l1)}
+    .nav-link[href="#level2"] .nl-dot{background:var(--l2)}
+    .nav-link[href="#level3"] .nl-dot{background:var(--l3)}
+    .nav-link[href="#level4"] .nl-dot{background:var(--l4)}
+
+    /* ── HERO ── */
+    .hero{padding:72px 0 56px;border-bottom:1px solid var(--b);margin-bottom:60px;text-align:center}
+    .hero-badge{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--l1);background:var(--l1b);border:1px solid var(--l1bb);padding:5px 14px;border-radius:6px;margin-bottom:20px}
+    .hero-badge::before{content:'';width:5px;height:5px;background:var(--l1);border-radius:50%;animation:blink 2s infinite}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+    .hero h1{font-size:clamp(28px,5vw,52px);font-weight:900;letter-spacing:-.03em;line-height:1.1;margin-bottom:12px}
+    .hero h1 em{font-style:normal;background:linear-gradient(120deg,var(--l1),var(--l3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .hero-desc{font-size:14px;color:var(--ts);max-width:480px;margin:0 auto;line-height:1.7}
+    .hero-guide{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:20px;font-size:12px;color:var(--tm)}
+    .hero-guide-dot{width:6px;height:6px;border-radius:50%;background:var(--l1);animation:blink 1.5s infinite}
+
+    /* ── STEP FLOW ── */
+    .step-flow{display:flex;align-items:stretch;background:var(--s1);border:1px solid var(--b);border-radius:12px;overflow:hidden;margin-bottom:60px}
+    .sf-item{flex:1;padding:14px 18px;border-right:1px solid var(--b);text-decoration:none;color:var(--t);transition:background .15s;position:relative}
+    .sf-item:last-child{border-right:none}
+    .sf-item:hover{background:var(--s2)}
+    .sf-num{font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--tm);margin-bottom:4px}
+    .sf-label{font-size:13px;font-weight:700;margin-bottom:1px}
+    .sf-en{font-size:10px;color:var(--tm)}
+    .sf-item::after{content:'›';position:absolute;right:-10px;top:50%;transform:translateY(-50%);font-size:18px;color:var(--tm);z-index:1}
+    .sf-item:last-child::after{display:none}
+    .sf-item[data-lv="1"] .sf-num{color:var(--l1)}
+    .sf-item[data-lv="2"] .sf-num{color:var(--l2)}
+    .sf-item[data-lv="3"] .sf-num{color:var(--l3)}
+    .sf-item[data-lv="4"] .sf-num{color:var(--l4)}
+    .sf-item[data-lv="5"] .sf-num{color:var(--tm)}
+
+    /* ── CONTAINER ── */
+    .wrap{max-width:1120px;margin:0 auto;padding:0 28px}
+
+    /* ── SECTION COMMON ── */
+    .section{margin-bottom:80px;scroll-margin-top:66px}
+    .sec-header{display:flex;align-items:center;gap:14px;margin-bottom:28px;padding-bottom:18px;border-bottom:1px solid var(--b)}
+    .lv-pill{font-family:'Inter',sans-serif;font-size:11px;font-weight:800;padding:5px 13px;border-radius:7px;white-space:nowrap;flex-shrink:0}
+    .lp1{background:var(--l1b);color:#a89fff;border:1px solid var(--l1bb)}
+    .lp2{background:var(--l2b);color:#7dd3fc;border:1px solid var(--l2bb)}
+    .lp3{background:var(--l3b);color:#f9a8d4;border:1px solid var(--l3bb)}
+    .lp4{background:var(--l4b);color:#6ee7b7;border:1px solid var(--l4bb)}
+    .sec-title h2{font-size:clamp(18px,2.4vw,24px);font-weight:800;letter-spacing:-.02em}
+    .sec-title p{font-size:12px;color:var(--ts);margin-top:3px}
+
+    /* ── L1: FUNNEL ── */
+    .l1-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    .l1-col-head{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--tm);padding:10px 14px;border-bottom:1px solid var(--b)}
+    .l1-col{background:var(--s1);border:1px solid var(--b);border-radius:14px;overflow:hidden}
+    .l1-stages{padding:10px;display:flex;flex-direction:column;gap:8px}
+    .stage-block{border:1px solid var(--b);border-radius:10px;overflow:hidden;cursor:pointer;transition:all .2s;user-select:none}
+    .stage-block:hover{border-color:var(--l1bb)}
+    .stage-block.selected{border-color:var(--l1);background:rgba(124,111,255,.06)}
+    .stage-top{padding:12px 14px;background:var(--s2);display:flex;flex-direction:column;gap:4px;transition:background .2s;position:relative}
+    .stage-block.selected .stage-top{background:rgba(124,111,255,.12)}
+    .stage-check{position:absolute;top:10px;right:12px;width:18px;height:18px;border-radius:50%;border:1.5px solid var(--b);display:flex;align-items:center;justify-content:center;font-size:10px;transition:all .2s}
+    .stage-block.selected .stage-check{background:var(--l1);border-color:var(--l1);color:#fff}
+    .stage-name-row{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700}
+    .ftag{font-size:9px;font-weight:800;padding:2px 7px;border-radius:4px;letter-spacing:.06em}
+    .ft-tofu{background:rgba(124,111,255,.2);color:#a89fff}
+    .ft-mofu{background:rgba(56,189,248,.2);color:#7dd3fc}
+    .ft-bofu{background:rgba(244,114,182,.2);color:#f9a8d4}
+    .ft-id{background:rgba(251,146,60,.2);color:#fdba74}
+    .ft-esg{background:rgba(52,211,153,.2);color:#6ee7b7}
+    .ft-hr{background:rgba(167,139,250,.2);color:#c4b5fd}
+    .stage-desc{font-size:11px;color:var(--ts);line-height:1.5}
+
+    /* ── L2: CHANNELS ── */
+    .ch-cat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+    .ch-cat-card{background:var(--s1);border:1px solid var(--b);border-radius:14px;overflow:hidden}
+    .ch-cat-head{padding:12px 16px;border-bottom:1px solid var(--b);display:flex;align-items:center;gap:9px}
+    .ch-cat-icon{font-size:16px}
+    .ch-cat-name{font-size:12px;font-weight:700}
+    .ch-cat-badge{font-size:9px;padding:2px 7px;border-radius:4px;font-weight:700;letter-spacing:.06em;margin-left:auto}
+    .cb-viral{background:rgba(124,111,255,.18);color:#a89fff}
+    .cb-paid{background:rgba(244,114,182,.18);color:#f9a8d4}
+    .cb-owned{background:rgba(56,189,248,.18);color:#7dd3fc}
+    .cb-offline{background:rgba(251,146,60,.18);color:#fdba74}
+    .cb-internal{background:rgba(52,211,153,.18);color:#6ee7b7}
+    .ch-chips{padding:12px;display:flex;flex-wrap:wrap;gap:6px}
+    .ch-chip{font-size:11px;font-weight:600;padding:5px 11px;border-radius:100px;border:1px solid var(--bl);background:var(--s3);color:var(--ts);cursor:pointer;user-select:none;transition:all .15s}
+    .ch-chip:hover{border-color:var(--l2bb);color:var(--t)}
+    .ch-chip.selected{background:var(--l2b);border-color:var(--l2);color:#7dd3fc}
+    .ch-chip.selected::before{content:'✓ ';font-size:9px;font-weight:900}
+    .ch-summary-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--s2);border:1px solid var(--b);border-radius:10px;margin-top:14px}
+    .ch-summary-label{font-size:11px;color:var(--ts)}
+    .ch-summary-chips{display:flex;flex-wrap:wrap;gap:5px;flex:1;margin:0 12px}
+    .ch-summary-chip{font-size:10px;padding:2px 8px;border-radius:100px;background:var(--l2b);border:1px solid var(--l2bb);color:#7dd3fc}
+    .ch-clear{font-size:11px;color:var(--tm);cursor:pointer;white-space:nowrap;padding:3px 8px;border-radius:5px;border:1px solid transparent;transition:all .15s}
+    .ch-clear:hover{color:var(--l3);border-color:var(--l3bb)}
+
+    /* ── L3: CONTENT TYPE ── */
+    .l3-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+    .l3-card{background:var(--s1);border:1px solid var(--b);border-radius:14px;padding:18px;transition:border-color .15s}
+    .l3-card:hover{border-color:var(--bl)}
+    .l3-icon{font-size:22px;margin-bottom:10px}
+    .l3-title{font-size:13px;font-weight:700;margin-bottom:10px}
+    .tag-list{display:flex;flex-wrap:wrap;gap:5px}
+    .sel-tag{font-size:11px;font-weight:500;padding:4px 10px;border-radius:100px;background:rgba(255,255,255,.05);border:1px solid var(--b);color:var(--ts);cursor:pointer;user-select:none;transition:all .15s}
+    .sel-tag:hover{border-color:var(--l3bb);color:var(--t)}
+    .sel-tag.selected{background:var(--l3b);border-color:var(--l3);color:#f9a8d4}
+    .sel-tag.selected::before{content:'✓ ';font-size:9px;font-weight:900}
+
+    /* ── L4: FORMAT ── */
+    .l4-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .fmt-block{background:var(--s1);border:1px solid var(--b);border-radius:14px;overflow:hidden}
+    .fmt-head{padding:13px 16px;border-bottom:1px solid var(--b);display:flex;align-items:center;gap:9px;font-size:13px;font-weight:700}
+    .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+    .d1{background:var(--l1)} .d2{background:var(--l2)} .d3{background:var(--l3)} .d4{background:var(--l4)}
+    .fmt-rows{padding:8px 10px;display:flex;flex-direction:column;gap:5px}
+    .fmt-row{padding:9px 12px;border-radius:8px;background:var(--s2);border:1px solid var(--b);font-size:12px;color:var(--ts);line-height:1.5;cursor:pointer;user-select:none;transition:all .15s;display:flex;align-items:center;justify-content:space-between}
+    .fmt-row:hover{color:var(--t);border-color:var(--l4bb)}
+    .fmt-row.selected{background:var(--l4b);border-color:var(--l4);color:#6ee7b7}
+    .fmt-row strong{color:var(--t);font-weight:600;transition:color .15s}
+    .fmt-row.selected strong{color:#6ee7b7}
+    .fmt-check{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--b);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;transition:all .2s}
+    .fmt-row.selected .fmt-check{background:var(--l4);border-color:var(--l4);color:#fff}
+
+    /* ── SUMMARY SECTION ── */
+    .sum-section{margin-top:60px;background:var(--s1);border:1px solid var(--b);border-radius:16px;overflow:hidden}
+    .sum-head{padding:20px 24px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between}
+    .sum-head-title{font-size:16px;font-weight:800;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+    .sum-total-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px;background:var(--l1b);border:1px solid var(--l1bb);color:#a89fff}
+    .sum-reset{font-size:11px;font-weight:600;color:var(--tm);cursor:pointer;padding:6px 14px;border-radius:7px;border:1px solid var(--b);transition:all .15s}
+    .sum-reset:hover{color:var(--l3);border-color:var(--l3bb)}
+    .sum-body{padding:20px 24px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .sum-level{background:var(--s2);border:1px solid var(--b);border-radius:12px;padding:16px}
+    .sum-level-head{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+    .sum-lv-tag{font-size:10px;font-weight:800;padding:3px 9px;border-radius:5px;letter-spacing:.06em}
+    .slt1{background:var(--l1b);color:#a89fff;border:1px solid var(--l1bb)}
+    .slt2{background:var(--l2b);color:#7dd3fc;border:1px solid var(--l2bb)}
+    .slt3{background:var(--l3b);color:#f9a8d4;border:1px solid var(--l3bb)}
+    .slt4{background:var(--l4b);color:#6ee7b7;border:1px solid var(--l4bb)}
+    .sum-lv-name{font-size:12px;font-weight:700;color:var(--ts)}
+    .sum-items{display:flex;flex-wrap:wrap;gap:5px;min-height:28px}
+    .sum-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:100px}
+    .sc1{background:var(--l1b);border:1px solid var(--l1bb);color:#c5bfff}
+    .sc2{background:var(--l2b);border:1px solid var(--l2bb);color:#93d0f5}
+    .sc3{background:var(--l3b);border:1px solid var(--l3bb);color:#f9a8d4}
+    .sc4{background:var(--l4b);border:1px solid var(--l4bb);color:#6ee7b7}
+    .sum-chip-x{font-size:12px;cursor:pointer;opacity:.5;line-height:1;transition:opacity .1s}
+    .sum-chip-x:hover{opacity:1}
+    .sum-empty{font-size:12px;color:var(--tm);font-style:italic}
+    .sum-footer{padding:16px 24px;border-top:1px solid var(--b);display:flex;align-items:center;justify-content:center;gap:8px}
+    .sum-copy-btn{font-size:12px;font-weight:600;padding:9px 22px;border-radius:8px;border:1px solid var(--b);background:transparent;color:var(--ts);cursor:pointer;transition:all .15s}
+    .sum-copy-btn:hover{border-color:var(--l1bb);color:var(--t)}
+    .sum-copy-btn.copied{border-color:var(--l4);color:#6ee7b7}
+
+    /* ── FLOATING PILL ── */
+    .float-pill{position:fixed;bottom:28px;right:28px;z-index:150;display:flex;align-items:center;gap:8px;padding:11px 18px;border-radius:100px;background:var(--s1);border:1px solid var(--bl);cursor:pointer;box-shadow:0 8px 32px rgba(0,0,0,.4);transition:all .2s;text-decoration:none;color:var(--t)}
+    .float-pill:hover{border-color:var(--l1bb);background:var(--s2)}
+    .float-pill-label{font-size:12px;font-weight:600}
+    .float-pill-count{font-size:11px;font-weight:800;padding:3px 9px;border-radius:100px;background:linear-gradient(135deg,var(--l1),var(--l3));color:#fff;min-width:24px;text-align:center}
+
+    /* ── FOOTER ── */
+    footer{border-top:1px solid var(--b);padding:32px;text-align:center;font-size:12px;color:var(--tm)}
+    footer strong{color:var(--ts)}
+
+    @media(max-width:860px){
+      .l1-grid{grid-template-columns:1fr} .l4-grid{grid-template-columns:1fr}
+      .sum-body{grid-template-columns:1fr}
+    }
+    @media(max-width:640px){
+      .wrap{padding:0 14px} .nav{padding:0 16px} .nav-links{display:none}
+      .step-flow{display:none}
+    }
+  </style>
+</head>
+<body>
+
+<div class="scroll-bar" id="scrollBar"></div>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo">Master Selection Board</div>
+  <div class="nav-links">
+    <a class="nav-link" href="#level1" data-lv="1">L1 목적·퍼널<span class="nl-dot"></span></a>
+    <a class="nav-link" href="#level2" data-lv="2">L2 배포채널<span class="nl-dot"></span></a>
+    <a class="nav-link" href="#level3" data-lv="3">L3 콘텐츠유형<span class="nl-dot"></span></a>
+    <a class="nav-link" href="#level4" data-lv="4">L4 포맷·화자<span class="nl-dot"></span></a>
+    <a class="nav-link" href="#summary">요약</a>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-badge">영상 콘텐츠 제작 표준 분류 체계</div>
+    <h1>Master<br/><em>Selection Board</em></h1>
+    <p class="hero-desc">4단계를 순서대로 선택하면 하단 요약에서 기획 내용을 한눈에 확인할 수 있습니다.</p>
+    <div class="hero-guide">
+      <div class="hero-guide-dot"></div>
+      <span>각 항목을 클릭하여 선택 · 다중 선택 가능</span>
+    </div>
+  </div>
+
+  <!-- STEP FLOW -->
+  <div class="step-flow">
+    <a class="sf-item" href="#level1" data-lv="1">
+      <div class="sf-num">LEVEL 01</div>
+      <div class="sf-label">목적 · 퍼널</div>
+      <div class="sf-en">PURPOSE & FUNNEL</div>
+    </a>
+    <a class="sf-item" href="#level2" data-lv="2">
+      <div class="sf-num">LEVEL 02</div>
+      <div class="sf-label">배포 채널</div>
+      <div class="sf-en">DISTRIBUTION</div>
+    </a>
+    <a class="sf-item" href="#level3" data-lv="3">
+      <div class="sf-num">LEVEL 03</div>
+      <div class="sf-label">콘텐츠 유형</div>
+      <div class="sf-en">CONTENT TYPE</div>
+    </a>
+    <a class="sf-item" href="#level4" data-lv="4">
+      <div class="sf-num">LEVEL 04</div>
+      <div class="sf-label">포맷 · 화자</div>
+      <div class="sf-en">FORMAT & SPEAKER</div>
+    </a>
+    <a class="sf-item" href="#summary" data-lv="5">
+      <div class="sf-num">SUMMARY</div>
+      <div class="sf-label">기획 요약</div>
+      <div class="sf-en">MY SELECTIONS</div>
+    </a>
+  </div>
+
+  <!-- ════ L1: PURPOSE & FUNNEL ════ -->
+  <section class="section" id="level1">
+    <div class="sec-header">
+      <div class="lv-pill lp1">LEVEL 01</div>
+      <div class="sec-title">
+        <h2>제작 목적 · 퍼널</h2>
+        <p>영상의 궁극적인 목적과 마케팅 퍼널 단계를 선택하세요. 복수 선택 가능합니다.</p>
+      </div>
+    </div>
+    <div class="l1-grid">
+
+      <div class="l1-col">
+        <div class="l1-col-head">마케팅 / 세일즈</div>
+        <div class="l1-stages">
+          <div class="stage-block" onclick="toggleL1(this,'tofu','TOFU · 인지/노출')">
+            <div class="stage-top">
+              <div class="stage-check">✓</div>
+              <div class="stage-name-row"><span class="ftag ft-tofu">TOFU</span>인지 / 노출</div>
+              <div class="stage-desc">브랜드 인지도 제고, 신규 유입, 노출 극대화</div>
+            </div>
+          </div>
+          <div class="stage-block" onclick="toggleL1(this,'mofu','MOFU · 고려/탐색')">
+            <div class="stage-top">
+              <div class="stage-check">✓</div>
+              <div class="stage-name-row"><span class="ftag ft-mofu">MOFU</span>고려 / 탐색</div>
+              <div class="stage-desc">제품 이해도 증진, 선호도 형성, 체류시간 확보</div>
+            </div>
+          </div>
+          <div class="stage-block" onclick="toggleL1(this,'bofu','BOFU · 전환/등록')">
+            <div class="stage-top">
+              <div class="stage-check">✓</div>
+              <div class="stage-name-row"><span class="ftag ft-bofu">BOFU</span>전환 / 등록</div>
+              <div class="stage-desc">구매/수강 신청 전환, 리드 확보, 매출 직결</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="l1-col">
+        <div class="l1-col-head">기업 / 브랜딩</div>
+        <div class="l1-stages">
+          <div class="stage-block" onclick="toggleL1(this,'id','Identity & PR')">
+            <div class="stage-top">
+              <div class="stage-check">✓</div>
+              <div class="stage-name-row"><span class="ftag ft-id">Identity & PR</span></div>
+              <div class="stage-desc">브랜드 철학 공유, 투자 유치(IR), 이미지 쇄신</div>
+            </div>
+          </div>
+          <div class="stage-block" onclick="toggleL1(this,'esg','ESG & CSR')">
+            <div class="stage-top">
+              <div class="stage-check">✓</div>
+              <div class="stage-name-row"><span class="ftag ft-esg">ESG & CSR</span></div>
+              <div class="stage-desc">사회적 가치 증명, 지속가능성 리포트 시각화</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="l1-col">
+        <div class="l1-col-head">조직 / 내부</div>
+        <div class="l1-stages">
+          <div class="stage-block" onclick="toggleL1(this,'hr','Internal & HR')">
+            <div class="stage-top">
+              <div class="stage-check">✓</div>
+              <div class="stage-name-row"><span class="ftag ft-hr">Internal & HR</span></div>
+              <div class="stage-desc">사내 교육/동기/문화, 메시지 전달, 고용 브랜딩</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ════ L2: DISTRIBUTION CHANNELS ════ -->
+  <section class="section" id="level2">
+    <div class="sec-header">
+      <div class="lv-pill lp2">LEVEL 02</div>
+      <div class="sec-title">
+        <h2>배포 채널</h2>
+        <p>영상이 노출될 채널을 선택하세요. 채널 선택이 포맷과 제작 방향을 결정합니다.</p>
+      </div>
+    </div>
+    <div class="ch-cat-grid">
+
+      <div class="ch-cat-card">
+        <div class="ch-cat-head">
+          <span class="ch-cat-icon">📱</span>
+          <span class="ch-cat-name">소셜 / 동영상</span>
+          <span class="ch-cat-badge cb-viral">바이럴·도달</span>
+        </div>
+        <div class="ch-chips">
+          <span class="ch-chip" onclick="toggleL2(this,'유튜브 (장편)')">유튜브 (장편)</span>
+          <span class="ch-chip" onclick="toggleL2(this,'유튜브 Shorts')">유튜브 Shorts</span>
+          <span class="ch-chip" onclick="toggleL2(this,'인스타그램 Reels')">인스타그램 Reels</span>
+          <span class="ch-chip" onclick="toggleL2(this,'인스타그램 피드')">인스타그램 피드</span>
+          <span class="ch-chip" onclick="toggleL2(this,'틱톡')">틱톡</span>
+          <span class="ch-chip" onclick="toggleL2(this,'페이스북')">페이스북</span>
+          <span class="ch-chip" onclick="toggleL2(this,'링크드인')">링크드인</span>
+        </div>
+      </div>
+
+      <div class="ch-cat-card">
+        <div class="ch-cat-head">
+          <span class="ch-cat-icon">🎯</span>
+          <span class="ch-cat-name">유료 광고</span>
+          <span class="ch-cat-badge cb-paid">타겟팅·전환</span>
+        </div>
+        <div class="ch-chips">
+          <span class="ch-chip" onclick="toggleL2(this,'메타 광고')">메타 광고</span>
+          <span class="ch-chip" onclick="toggleL2(this,'메타 리타겟팅')">메타 리타겟팅</span>
+          <span class="ch-chip" onclick="toggleL2(this,'구글/유튜브 광고')">구글/유튜브 광고</span>
+          <span class="ch-chip" onclick="toggleL2(this,'네이버 GFA')">네이버 GFA</span>
+          <span class="ch-chip" onclick="toggleL2(this,'네이버 검색 광고')">네이버 검색 광고</span>
+          <span class="ch-chip" onclick="toggleL2(this,'카카오 비즈보드')">카카오 비즈보드</span>
+          <span class="ch-chip" onclick="toggleL2(this,'틱톡 광고')">틱톡 광고</span>
+        </div>
+      </div>
+
+      <div class="ch-cat-card">
+        <div class="ch-cat-head">
+          <span class="ch-cat-icon">🌐</span>
+          <span class="ch-cat-name">공식 채널</span>
+          <span class="ch-cat-badge cb-owned">정보·전환</span>
+        </div>
+        <div class="ch-chips">
+          <span class="ch-chip" onclick="toggleL2(this,'홈페이지')">홈페이지</span>
+          <span class="ch-chip" onclick="toggleL2(this,'랜딩페이지')">랜딩페이지</span>
+          <span class="ch-chip" onclick="toggleL2(this,'공식 블로그')">공식 블로그</span>
+          <span class="ch-chip" onclick="toggleL2(this,'전용 앱')">전용 앱</span>
+          <span class="ch-chip" onclick="toggleL2(this,'뉴스레터 (EDM)')">뉴스레터 (EDM)</span>
+          <span class="ch-chip" onclick="toggleL2(this,'뉴스룸/보도자료')">뉴스룸/보도자료</span>
+        </div>
+      </div>
+
+      <div class="ch-cat-card">
+        <div class="ch-cat-head">
+          <span class="ch-cat-icon">🏙️</span>
+          <span class="ch-cat-name">오프라인 / 옥외</span>
+          <span class="ch-cat-badge cb-offline">브랜드 노출</span>
+        </div>
+        <div class="ch-chips">
+          <span class="ch-chip" onclick="toggleL2(this,'대형 전광판')">대형 전광판</span>
+          <span class="ch-chip" onclick="toggleL2(this,'지하철/버스 광고')">지하철/버스 광고</span>
+          <span class="ch-chip" onclick="toggleL2(this,'캠퍼스 디스플레이')">캠퍼스 디스플레이</span>
+          <span class="ch-chip" onclick="toggleL2(this,'행사 현장')">행사 현장</span>
+          <span class="ch-chip" onclick="toggleL2(this,'TV/OTT')">TV/OTT</span>
+        </div>
+      </div>
+
+      <div class="ch-cat-card">
+        <div class="ch-cat-head">
+          <span class="ch-cat-icon">🏢</span>
+          <span class="ch-cat-name">내부 채널</span>
+          <span class="ch-cat-badge cb-internal">임직원 소통</span>
+        </div>
+        <div class="ch-chips">
+          <span class="ch-chip" onclick="toggleL2(this,'사내 인트라넷')">사내 인트라넷</span>
+          <span class="ch-chip" onclick="toggleL2(this,'사내 교육 시스템')">사내 교육 시스템</span>
+          <span class="ch-chip" onclick="toggleL2(this,'사내 메신저')">사내 메신저</span>
+          <span class="ch-chip" onclick="toggleL2(this,'사내 게시판')">사내 게시판</span>
+          <span class="ch-chip" onclick="toggleL2(this,'채용 플랫폼')">채용 플랫폼</span>
+        </div>
+      </div>
+
+    </div>
+    <div class="ch-summary-bar" id="ch-bar" style="display:none">
+      <span class="ch-summary-label">선택된 채널</span>
+      <div class="ch-summary-chips" id="ch-bar-chips"></div>
+      <span class="ch-clear" onclick="clearL2()">전체 해제</span>
+    </div>
+  </section>
+
+  <!-- ════ L3: CONTENT TYPE ════ -->
+  <section class="section" id="level3">
+    <div class="sec-header">
+      <div class="lv-pill lp3">LEVEL 03</div>
+      <div class="sec-title">
+        <h2>콘텐츠 유형</h2>
+        <p>메시지의 성격과 장르에 맞는 콘텐츠 유형을 선택하세요.</p>
+      </div>
+    </div>
+    <div class="l3-grid">
+
+      <div class="l3-card">
+        <div class="l3-icon">🎬</div>
+        <div class="l3-title">브랜드 / PR</div>
+        <div class="tag-list">
+          <span class="sel-tag" onclick="toggleL3(this,'매니페스토')">매니페스토</span>
+          <span class="sel-tag" onclick="toggleL3(this,'브랜드 필름')">브랜드 필름</span>
+          <span class="sel-tag" onclick="toggleL3(this,'브랜드 다큐')">브랜드 다큐</span>
+          <span class="sel-tag" onclick="toggleL3(this,'캠페인')">캠페인</span>
+          <span class="sel-tag" onclick="toggleL3(this,'ESG 캠페인')">ESG 캠페인</span>
+          <span class="sel-tag" onclick="toggleL3(this,'뉴스룸')">뉴스룸</span>
+          <span class="sel-tag" onclick="toggleL3(this,'브랜디드 콘텐츠')">브랜디드 콘텐츠</span>
+        </div>
+      </div>
+
+      <div class="l3-card">
+        <div class="l3-icon">📦</div>
+        <div class="l3-title">제품 / 서비스</div>
+        <div class="tag-list">
+          <span class="sel-tag" onclick="toggleL3(this,'테스티모니얼')">테스티모니얼</span>
+          <span class="sel-tag" onclick="toggleL3(this,'제품 데모')">제품 데모</span>
+          <span class="sel-tag" onclick="toggleL3(this,'기능 하이라이트')">기능 하이라이트</span>
+          <span class="sel-tag" onclick="toggleL3(this,'언박싱')">언박싱</span>
+          <span class="sel-tag" onclick="toggleL3(this,'비교 분석')">비교 분석</span>
+        </div>
+      </div>
+
+      <div class="l3-card">
+        <div class="l3-icon">📚</div>
+        <div class="l3-title">교육 / 가이드</div>
+        <div class="tag-list">
+          <span class="sel-tag" onclick="toggleL3(this,'튜토리얼')">튜토리얼</span>
+          <span class="sel-tag" onclick="toggleL3(this,'강의/세미나')">강의/세미나</span>
+          <span class="sel-tag" onclick="toggleL3(this,'FAQ 답변')">FAQ 답변</span>
+          <span class="sel-tag" onclick="toggleL3(this,'온보딩 가이드')">온보딩 가이드</span>
+        </div>
+      </div>
+
+      <div class="l3-card">
+        <div class="l3-icon">🎪</div>
+        <div class="l3-title">캠페인 / 행사</div>
+        <div class="tag-list">
+          <span class="sel-tag" onclick="toggleL3(this,'바이럴 광고')">바이럴 광고</span>
+          <span class="sel-tag" onclick="toggleL3(this,'티저 영상')">티저 영상</span>
+          <span class="sel-tag" onclick="toggleL3(this,'현장 스케치')">현장 스케치</span>
+          <span class="sel-tag" onclick="toggleL3(this,'하이라이트')">하이라이트</span>
+          <span class="sel-tag" onclick="toggleL3(this,'오프닝 필름')">오프닝 필름</span>
+          <span class="sel-tag" onclick="toggleL3(this,'오프라인용 필름')">오프라인용 필름</span>
+        </div>
+      </div>
+
+      <div class="l3-card">
+        <div class="l3-icon">🏢</div>
+        <div class="l3-title">조직 / 정보</div>
+        <div class="tag-list">
+          <span class="sel-tag" onclick="toggleL3(this,'채용 브랜드 필름')">채용 브랜드 필름</span>
+          <span class="sel-tag" onclick="toggleL3(this,'직무 소개')">직무 소개</span>
+          <span class="sel-tag" onclick="toggleL3(this,'직원 소개')">직원 소개</span>
+          <span class="sel-tag" onclick="toggleL3(this,'팟캐스트 영상화')">팟캐스트 영상화</span>
+          <span class="sel-tag" onclick="toggleL3(this,'웨비나')">웨비나</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ════ L4: FORMAT & SPEAKER ════ -->
+  <section class="section" id="level4">
+    <div class="sec-header">
+      <div class="lv-pill lp4">LEVEL 04</div>
+      <div class="sec-title">
+        <h2>표현 기법 · 화자</h2>
+        <p>메시지를 담을 포맷과 화자를 선택하세요.</p>
+      </div>
+    </div>
+    <div class="l4-grid">
+
+      <div class="fmt-block">
+        <div class="fmt-head"><span class="dot d1"></span>실사 기반</div>
+        <div class="fmt-rows">
+          <div class="fmt-row" onclick="toggleL4(this,'인터뷰/대담')">
+            <span><strong>인터뷰 / 대담</strong> — 전문성과 신뢰감 전달</span>
+            <span class="fmt-check">✓</span>
+          </div>
+          <div class="fmt-row" onclick="toggleL4(this,'다큐멘터리')">
+            <span><strong>다큐멘터리</strong> — 깊이 있는 스토리텔링</span>
+            <span class="fmt-check">✓</span>
+          </div>
+          <div class="fmt-row" onclick="toggleL4(this,'웹드라마')">
+            <span><strong>웹드라마</strong> — 내러티브 기반 브랜딩</span>
+            <span class="fmt-check">✓</span>
+          </div>
+          <div class="fmt-row" onclick="toggleL4(this,'브이로그')">
+            <span><strong>브이로그</strong> — 일상적 친밀감 연출</span>
+            <span class="fmt-check">✓</span>
+          </div>
+          <div class="fmt-row" onclick="toggleL4(this,'타임랩스/하이퍼랩스')">
+            <span><strong>타임랩스 / 하이퍼랩스</strong> — 역동적 시각 효과</span>
+            <span class="fmt-check">✓</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="fmt-block">
+        <div class="fmt-head"><span class="dot d2"></span>그래픽 기반</div>
+        <div class="fmt-rows">
+          <div class="fmt-row" onclick="toggleL4(this,'모션그래픽')">
+            <span><strong>모션그래픽</strong> — 복잡한 정보의 시각화</span>
+            <span class="fmt-check">✓</span>
+          </div>
+          <div class="fmt-row" onclick="toggleL4(this,'인포그래픽')">
+            <span><strong>인포그래픽</strong> — 데이터 중심 설명</span>
+            <span class="fmt-check">✓</span>
+          </div>
+          <div class="fmt-row" onclick="toggleL4(this,'키네틱 타이포그래피')">
+            <span><strong>키네틱 타이포그래피</strong> — 메시지 강조</span>
+            <span class="fmt-check">✓</span>
+          </div>
+          <div class="fmt-row" onclick="toggleL4(this,'화이트보드 애니메이션')">
+            <span><strong>화이트보드 애니메이션</strong> — 교육/설명</span>
+            <span class="fmt-check">✓</span>
+          </div>
+          <div class="fmt-row" onclick="toggleL4(this,'2D/3D 애니메이션')">
+            <span><strong>2D / 3D 애니메이션</strong> — 창의적 스토리</span>
+            <span class="fmt-check">✓</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="fmt-block">
+        <div class="fmt-head"><span class="dot d3"></span>신기술 기반</div>
+        <div class="fmt-rows">
+          <div class="fmt-row" onclick="toggleL4(this,'AI 생성 영상')">
+            <span><strong>AI 생성 영상</strong> — 빠른 제작, 확장성</span>
+            <span class="fmt-check">✓</span>
+          </div>
+          <div class="fmt-row" onclick="toggleL4(this,'버추얼 프로덕션')">
+            <span><strong>버추얼 프로덕션</strong> — 몰입형 환경 구현</span>
+            <span class="fmt-check">✓</span>
+          </div>
+          <div class="fmt-row" onclick="toggleL4(this,'스크린 레코딩')">
+            <span><strong>스크린 레코딩</strong> — SaaS/소프트웨어 설명</span>
+            <span class="fmt-check">✓</span>
+          </div>
+          <div class="fmt-row" onclick="toggleL4(this,'라이브 스트리밍')">
+            <span><strong>라이브 스트리밍</strong> — 실시간 인터랙션</span>
+            <span class="fmt-check">✓</span>
+          </div>
+          <div class="fmt-row" onclick="toggleL4(this,'인터랙티브 영상')">
+            <span><strong>인터랙티브 영상</strong> — 참여형 경험</span>
+            <span class="fmt-check">✓</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="fmt-block">
+        <div class="fmt-head"><span class="dot d4"></span>화자 · 출처 (WHO)</div>
+        <div class="fmt-rows">
+          <div class="fmt-row" onclick="toggleL4(this,'브랜드 공식')">
+            <span><strong>브랜드 공식</strong> — 공식 내레이션, 브랜드 캐릭터</span>
+            <span class="fmt-check">✓</span>
+          </div>
+          <div class="fmt-row" onclick="toggleL4(this,'내부인 (CEO/전문가)')">
+            <span><strong>내부인</strong> — CEO/경영진, 실무 전문가, 사내 모델</span>
+            <span class="fmt-check">✓</span>
+          </div>
+          <div class="fmt-row" onclick="toggleL4(this,'사용자 (고객/수강생)')">
+            <span><strong>사용자</strong> — 실제 고객/수강생, 성공 사례자, 팬덤</span>
+            <span class="fmt-check">✓</span>
+          </div>
+          <div class="fmt-row" onclick="toggleL4(this,'제3자 (전문가/인플루언서)')">
+            <span><strong>제3자</strong> — 업계 전문가, 인플루언서, 연예인</span>
+            <span class="fmt-check">✓</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ════ SUMMARY ════ -->
+  <section class="section" id="summary">
+    <div class="sec-header">
+      <div class="lv-pill" style="background:rgba(255,255,255,.06);color:var(--ts);border:1px solid var(--b)">SUMMARY</div>
+      <div class="sec-title">
+        <h2>기획 요약</h2>
+        <p>선택한 항목들이 실시간으로 반영됩니다.</p>
+      </div>
+    </div>
+    <div class="sum-section">
+      <div class="sum-head">
+        <div class="sum-head-title">
+          내 선택 요약
+          <span class="sum-total-badge" id="sumTotalBadge">0개 선택</span>
+        </div>
+        <div class="sum-reset" onclick="resetAll()">전체 초기화</div>
+      </div>
+      <div class="sum-body">
+        <div class="sum-level">
+          <div class="sum-level-head">
+            <span class="sum-lv-tag slt1">L1</span>
+            <span class="sum-lv-name">목적 · 퍼널</span>
+          </div>
+          <div class="sum-items" id="sum-l1"><span class="sum-empty">선택 없음</span></div>
+        </div>
+        <div class="sum-level">
+          <div class="sum-level-head">
+            <span class="sum-lv-tag slt2">L2</span>
+            <span class="sum-lv-name">배포 채널</span>
+          </div>
+          <div class="sum-items" id="sum-l2"><span class="sum-empty">선택 없음</span></div>
+        </div>
+        <div class="sum-level">
+          <div class="sum-level-head">
+            <span class="sum-lv-tag slt3">L3</span>
+            <span class="sum-lv-name">콘텐츠 유형</span>
+          </div>
+          <div class="sum-items" id="sum-l3"><span class="sum-empty">선택 없음</span></div>
+        </div>
+        <div class="sum-level">
+          <div class="sum-level-head">
+            <span class="sum-lv-tag slt4">L4</span>
+            <span class="sum-lv-name">포맷 · 화자</span>
+          </div>
+          <div class="sum-items" id="sum-l4"><span class="sum-empty">선택 없음</span></div>
+        </div>
+      </div>
+      <div class="sum-footer">
+        <button class="sum-copy-btn" id="copyBtn" onclick="copySummary()">📋 요약 텍스트 복사</button>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /wrap -->
+
+<!-- FLOATING PILL -->
+<a class="float-pill" href="#summary" id="floatPill">
+  <span class="float-pill-label">내 선택</span>
+  <span class="float-pill-count" id="floatCount">0</span>
+</a>
+
+<footer>
+  <strong>Master Selection Board</strong> — 영상 콘텐츠 제작 표준 분류 체계 v4
+</footer>
+
+<script>
+  /* ── STATE ── */
+  const sel = { l1: new Map(), l2: new Map(), l3: new Map(), l4: new Map() };
+
+  /* ── TOGGLE FUNCTIONS ── */
+  function toggleL1(el, key, label) {
+    const m = sel.l1;
+    if (m.has(key)) { m.delete(key); el.classList.remove('selected'); }
+    else             { m.set(key, label); el.classList.add('selected'); }
+    updateSummary();
+  }
+  function toggleL2(el, label) {
+    const m = sel.l2;
+    if (m.has(label)) { m.delete(label); el.classList.remove('selected'); }
+    else               { m.set(label, label); el.classList.add('selected'); }
+    renderChBar();
+    updateSummary();
+  }
+  function toggleL3(el, label) {
+    const m = sel.l3;
+    if (m.has(label)) { m.delete(label); el.classList.remove('selected'); }
+    else               { m.set(label, label); el.classList.add('selected'); }
+    updateSummary();
+  }
+  function toggleL4(el, label) {
+    const m = sel.l4;
+    if (m.has(label)) { m.delete(label); el.classList.remove('selected'); }
+    else               { m.set(label, label); el.classList.add('selected'); }
+    updateSummary();
+  }
+
+  /* ── CLEAR ── */
+  function clearL2() {
+    sel.l2.clear();
+    document.querySelectorAll('.ch-chip').forEach(c => c.classList.remove('selected'));
+    renderChBar(); updateSummary();
+  }
+  function resetAll() {
+    sel.l1.clear(); sel.l2.clear(); sel.l3.clear(); sel.l4.clear();
+    document.querySelectorAll('.stage-block').forEach(e => e.classList.remove('selected'));
+    document.querySelectorAll('.ch-chip').forEach(e => e.classList.remove('selected'));
+    document.querySelectorAll('.sel-tag').forEach(e => e.classList.remove('selected'));
+    document.querySelectorAll('.fmt-row').forEach(e => e.classList.remove('selected'));
+    renderChBar(); updateSummary();
+  }
+
+  /* ── CHANNEL BAR ── */
+  function renderChBar() {
+    const bar = document.getElementById('ch-bar');
+    const chips = document.getElementById('ch-bar-chips');
+    if (sel.l2.size === 0) { bar.style.display = 'none'; return; }
+    bar.style.display = 'flex';
+    chips.innerHTML = '';
+    sel.l2.forEach(label => {
+      const c = document.createElement('span');
+      c.className = 'ch-summary-chip';
+      c.textContent = label;
+      chips.appendChild(c);
+    });
+  }
+
+  /* ── SUMMARY ── */
+  function renderSumLevel(id, map, chipClass) {
+    const el = document.getElementById(id);
+    if (map.size === 0) { el.innerHTML = '<span class="sum-empty">선택 없음</span>'; return; }
+    el.innerHTML = '';
+    map.forEach((label, key) => {
+      const chip = document.createElement('div');
+      chip.className = `sum-chip ${chipClass}`;
+      chip.innerHTML = `${label}<span class="sum-chip-x" onclick="removeSel('${id}','${key}')">×</span>`;
+      el.appendChild(chip);
+    });
+  }
+
+  function removeSel(sumId, key) {
+    const lvMap = { 'sum-l1': sel.l1, 'sum-l2': sel.l2, 'sum-l3': sel.l3, 'sum-l4': sel.l4 };
+    const m = lvMap[sumId];
+    if (!m) return;
+    m.delete(key);
+    // deselect corresponding UI element
+    if (sumId === 'sum-l1') document.querySelectorAll('.stage-block').forEach(e => { if (e.onclick?.toString().includes(`'${key}'`)) e.classList.remove('selected'); });
+    if (sumId === 'sum-l2') document.querySelectorAll('.ch-chip').forEach(e => { if (e.textContent.trim() === key) e.classList.remove('selected'); });
+    if (sumId === 'sum-l3') document.querySelectorAll('.sel-tag').forEach(e => { if (e.textContent.trim() === key) e.classList.remove('selected'); });
+    if (sumId === 'sum-l4') document.querySelectorAll('.fmt-row').forEach(e => { if (e.onclick?.toString().includes(`'${key}'`)) e.classList.remove('selected'); });
+    if (sumId === 'sum-l2') renderChBar();
+    updateSummary();
+  }
+
+  function updateSummary() {
+    renderSumLevel('sum-l1', sel.l1, 'sc1');
+    renderSumLevel('sum-l2', sel.l2, 'sc2');
+    renderSumLevel('sum-l3', sel.l3, 'sc3');
+    renderSumLevel('sum-l4', sel.l4, 'sc4');
+    const total = sel.l1.size + sel.l2.size + sel.l3.size + sel.l4.size;
+    document.getElementById('sumTotalBadge').textContent = `${total}개 선택`;
+    document.getElementById('floatCount').textContent = total;
+    // nav dots
+    const lvs = [1,2,3,4];
+    lvs.forEach(lv => {
+      const link = document.querySelector(`.nav-link[href="#level${lv}"]`);
+      if (!link) return;
+      const m = sel[`l${lv}`];
+      link.classList.toggle('has-sel', m.size > 0);
+    });
+  }
+
+  /* ── COPY ── */
+  function copySummary() {
+    const lines = [
+      '【 Master Selection Board — 기획 요약 】',
+      '',
+      `L1 목적·퍼널: ${[...sel.l1.values()].join(', ') || '미선택'}`,
+      `L2 배포 채널: ${[...sel.l2.values()].join(', ') || '미선택'}`,
+      `L3 콘텐츠유형: ${[...sel.l3.values()].join(', ') || '미선택'}`,
+      `L4 포맷·화자: ${[...sel.l4.values()].join(', ') || '미선택'}`,
+    ];
+    navigator.clipboard.writeText(lines.join('\n')).then(() => {
+      const btn = document.getElementById('copyBtn');
+      btn.textContent = '✅ 복사 완료!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = '📋 요약 텍스트 복사'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+
+  /* ── SCROLL PROGRESS ── */
+  const bar = document.getElementById('scrollBar');
+  window.addEventListener('scroll', () => {
+    const h = document.documentElement;
+    bar.style.width = ((h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100) + '%';
+  });
+
+  /* ── ACTIVE NAV ── */
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.nav-link');
+  new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        navLinks.forEach(l => l.classList.remove('active'));
+        const a = document.querySelector(`.nav-link[href="#${e.target.id}"]`);
+        if (a) a.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-30% 0px -60% 0px' }).observe && sections.forEach(s =>
+    new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) {
+        navLinks.forEach(l => l.classList.remove('active'));
+        const a = document.querySelector(`.nav-link[href="#${s.id}"]`);
+        if (a) a.classList.add('active');
+      }
+    }, { rootMargin: '-30% 0px -60% 0px' }).observe(s)
+  );
+</script>
+</body>
+</html>
